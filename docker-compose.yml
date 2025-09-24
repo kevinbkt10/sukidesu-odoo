@@ -1,0 +1,38 @@
+services:
+  db:
+    image: docker.io/library/postgres:17
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      args:
+        ODOO_VERSION: "18.0"   # estável
+        GH_USER: ${GH_USER}
+        GH_TOKEN: ${GH_TOKEN}
+    depends_on:
+      - db
+    environment:
+      ODOO_RC: /etc/odoo/odoo.conf
+    volumes:
+      - odoo-data:/var/lib/odoo
+      # opcional: se você tiver addons próprios no repo, crie a pasta
+      # - ./extra-addons:/mnt/extra-addons
+    ports:
+      - "8069:8069"   # HTTP
+      - "8072:8072"   # longpolling
+    command: ["odoo", "-c", "/etc/odoo/odoo.conf"]
+
+volumes:
+  dbdata:
+  odoo-data:
